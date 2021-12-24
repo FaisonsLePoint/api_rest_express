@@ -42,7 +42,7 @@ router.get('/:id', (req, res) => {
             if (user === null) {
                 return res.status(404).json({ message: 'This user does not exist !' })
             }
-
+            
             // Utilisateur trouvé
             return res.json({ data: user })
         })

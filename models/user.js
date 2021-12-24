@@ -41,7 +41,7 @@ const User = DB.define('User', {
 /*******************************/
 /*** Synchronisation du modèle */
 // User.sync()
-// User.sync({force: true})
-// User.sync({alter: true})
+//User.sync({force: true})
+//User.sync({alter: true})
 
 module.exports = User
