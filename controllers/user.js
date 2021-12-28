@@ -13,7 +13,7 @@ exports.getAllUsers = (req, res) => {
         .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
 
-exports.getUser = (req, res) => {
+exports.getUser = async (req, res) => {
     let userId = parseInt(req.params.id)
 
     // Vérification si le champ id est présent et cohérent
@@ -21,20 +21,20 @@ exports.getUser = (req, res) => {
         return res.json(400).json({ message: 'Missing Parameter' })
     }
 
-    // Récupération de l'utilisateur
-    User.findOne({ where: { id: userId }, raw: true })
-        .then(user => {
-            if (user === null) {
-                return res.status(404).json({ message: 'This user does not exist !' })
-            }
-            
-            // Utilisateur trouvé
-            return res.json({ data: user })
-        })
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+    try{
+        // Récupération de l'utilisateur et vérification
+        let user = await User.findOne({ where: { id: userId }, raw: true })
+        if (user === null) {
+            return res.status(404).json({ message: 'This user does not exist !' })
+        }
+
+        return res.json({ data: user })
+    }catch(err){
+        return res.status(500).json({ message: 'Database Error', error: err })
+    }    
 }
 
-exports.addUser = (req, res) => {
+exports.addUser = async (req, res) => {
     const { nom, prenom, pseudo, email, password } = req.body
 
     // Validation des données reçues
@@ -42,29 +42,30 @@ exports.addUser = (req, res) => {
         return res.status(400).json({ message: 'Missing Data' })
     }
 
-    User.findOne({ where: { email: email }, raw: true })
-        .then(user => {
-            // Vérification si l'utilisateur existe déjà
-            if (user !== null) {
-                return res.status(409).json({ message: `The user ${nom} already exists !` })
-            }
+    try{
+        // Vérification si l'utilisateur existe déjà
+        let user = await User.findOne({ where: { email: email }, raw: true })
+        if (user !== null) {
+            return res.status(409).json({ message: `The user ${nom} already exists !` })
+        }
 
-            // Hashage du mot de passe utilisateur
-            bcrypt.hash(password, parseInt(process.env.BCRYPT_SALT_ROUND))
-                .then(hash => {
-                    req.body.password = hash
+        // Hashage du mot de passe utilisateur
+        let hash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_SALT_ROUND))
+        req.body.password = hash
 
-                    // Céation de l'utilisateur
-                    User.create(req.body)
-                        .then(user => res.json({ message: 'User Created', data: user }))
-                        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
-                })
-                .catch(err => res.status(500).json({ message: 'Hash Process Error', error: err }))
-        })
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+        // Céation de l'utilisateur
+        let User = await User.create(req.body)
+        return res.json({ message: 'User Created', data: user })
+
+    }catch(err){
+        if(err.name == 'SequelizeDatabaseError'){
+            res.status(500).json({ message: 'Database Error', error: err })
+        }
+        res.status(500).json({ message: 'Hash Process Error', error: err})        
+    }
 }
 
-exports.updateUser = (req, res) => {
+exports.updateUser = async (req, res) => {
     let userId = parseInt(req.params.id)
 
     // Vérification si le champ id est présent et cohérent
@@ -72,20 +73,19 @@ exports.updateUser = (req, res) => {
         return res.status(400).json({ message: 'Missing parameter' })
     }
 
-    // Recherche de l'utilisateur
-    User.findOne({ where: {id: userId}, raw: true})
-        .then(user => {
-            // Vérifier si l'utilisateur existe
-            if(user === null){
-                return res.status(404).json({ message: 'This user does not exist !'})
-            }
+    try{
+        // Recherche de l'utilisateur et vérification
+        let user = await User.findOne({ where: {id: userId}, raw: true})
+        if(user === null){
+            return res.status(404).json({ message: 'This user does not exist !'})
+        }
 
-            // Mise à jour de l'utilisateur
-            User.update(req.body, { where: {id: userId}})
-                .then(user => res.json({ message: 'User Updated'}))
-                .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
-        })
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+        // Mise à jour de l'utilisateur
+        await User.update(req.body, { where: {id: userId}})
+        return res.json({ message: 'User Updated'})
+    }catch(err){
+        return res.status(500).json({ message: 'Database Error', error: err })
+    }
 }
 
 exports.untrashUser =  (req, res) => {

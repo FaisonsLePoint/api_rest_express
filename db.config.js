@@ -15,8 +15,8 @@ let sequelize = new Sequelize(
 
 /*********************************/
 /*** Synchronisation des modèles */
-// sequelize.sync(err => {
-//     console.log('Database Sync Error', err)
-// })
+sequelize.sync(err => {
+    console.log('Database Sync Error', err)
+})
 
 module.exports = sequelize
