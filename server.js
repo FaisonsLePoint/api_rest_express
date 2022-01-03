@@ -3,6 +3,7 @@
 const express = require('express')
 const cors = require('cors')
 const checkTokenMiddleware = require('./jsonwebtoken/check')
+const errorHandler = require('./error/errorHandler')
 
 /************************************/
 /*** Import de la connexion à la DB */
@@ -33,6 +34,8 @@ app.use('/cocktails', cocktail_router)
 app.use('/auth', auth_router)
 
 app.get('*', (req, res) => res.status(501).send('What the hell are you doing !?!'))
+
+app.use(errorHandler)
 
 /********************************/
 /*** Start serveur avec test DB */

@@ -1,52 +1,55 @@
 /***********************************/
 /*** Import des module nécessaires */
 const bcrypt = require('bcrypt')
-
 const User = require('../models/user')
+const { RequestError, UserError } = require('../error/customError')
 
 /**********************************/
 /*** Routage de la ressource User */
 
-exports.getAllUsers = (req, res) => {
+exports.getAllUsers = (req, res, next) => {
     User.findAll()
         .then(users => res.json({ data: users }))
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+        .catch(err => next(err))
 }
 
-exports.getUser = async (req, res) => {
-    let userId = parseInt(req.params.id)
+exports.getUser = async (req, res, next) => {
+    try {
+        let userId = parseInt(req.params.id)
 
-    // Vérification si le champ id est présent et cohérent
-    if (!userId) {
-        return res.json(400).json({ message: 'Missing Parameter' })
-    }
-
-    try{
-        // Récupération de l'utilisateur et vérification
-        let user = await User.findOne({ where: { id: userId }, raw: true })
-        if (user === null) {
-            return res.status(404).json({ message: 'This user does not exist !' })
+        // Vérification si le champ id est présent et cohérent
+        if (!userId) {
+            throw new RequestError('Missing parameter')
         }
 
+        // Récupération de l'utilisateur et vérification
+        let user = await User.findOne({ where: { id: userId }, raw: true })
+
+        // Test si résultat
+        if (user === null) {
+            throw new UserError('This user does not exist !', 0)
+        }
+
+        // Renvoi de l'Utilisateur trouvé
         return res.json({ data: user })
-    }catch(err){
-        return res.status(500).json({ message: 'Database Error', error: err })
-    }    
+    } catch (err) {
+        next(err)
+    }
 }
 
-exports.addUser = async (req, res) => {
-    const { nom, prenom, pseudo, email, password } = req.body
+exports.addUser = async (req, res, next) => {
+    try {
+        const { nom, prenom, pseudo, email, password } = req.body
 
-    // Validation des données reçues
-    if (!nom || !prenom || !pseudo || !email || !password) {
-        return res.status(400).json({ message: 'Missing Data' })
-    }
+        // Validation des données reçues
+        if (!nom || !prenom || !pseudo || !email || !password) {
+            throw new RequestError('Missing parameter')
+        }
 
-    try{
         // Vérification si l'utilisateur existe déjà
         let user = await User.findOne({ where: { email: email }, raw: true })
         if (user !== null) {
-            return res.status(409).json({ message: `The user ${nom} already exists !` })
+            throw new UserError(`The user ${nom} already exists !`, 1)
         }
 
         // Hashage du mot de passe utilisateur
@@ -55,76 +58,92 @@ exports.addUser = async (req, res) => {
 
         // Céation de l'utilisateur
         let User = await User.create(req.body)
+
+        // Réponse du user créé
         return res.json({ message: 'User Created', data: user })
 
-    }catch(err){
-        if(err.name == 'SequelizeDatabaseError'){
-            res.status(500).json({ message: 'Database Error', error: err })
-        }
-        res.status(500).json({ message: 'Hash Process Error', error: err})        
+    } catch (err) {
+        next(err)
     }
 }
 
-exports.updateUser = async (req, res) => {
-    let userId = parseInt(req.params.id)
+exports.updateUser = async (req, res, next) => {
+    try {
+        let userId = parseInt(req.params.id)
 
-    // Vérification si le champ id est présent et cohérent
-    if (!userId) {
-        return res.status(400).json({ message: 'Missing parameter' })
-    }
+        // Vérification si le champ id est présent et cohérent
+        if (!userId) {
+            throw new RequestError('Missing parameter')
+        }
 
-    try{
         // Recherche de l'utilisateur et vérification
-        let user = await User.findOne({ where: {id: userId}, raw: true})
-        if(user === null){
-            return res.status(404).json({ message: 'This user does not exist !'})
+        let user = await User.findOne({ where: { id: userId }, raw: true })
+        if (user === null) {
+            throw new UserError('This user does not exist !', 0)
         }
 
         // Mise à jour de l'utilisateur
-        await User.update(req.body, { where: {id: userId}})
-        return res.json({ message: 'User Updated'})
-    }catch(err){
-        return res.status(500).json({ message: 'Database Error', error: err })
+        await User.update(req.body, { where: { id: userId } })
+
+        // Réponse de la mise à jour
+        return res.json({ message: 'User Updated' })
+    } catch (err) {
+        next(err)
     }
 }
 
-exports.untrashUser =  (req, res) => {
-    let userId = parseInt(req.params.id)
+exports.untrashUser = async (req, res, next) => {
+    try {
+        let userId = parseInt(req.params.id)
 
-    // Vérification si le champ id est présent et cohérent
-    if (!userId) {
-        return res.status(400).json({ message: 'Missing parameter' })
+        // Vérification si le champ id est présent et cohérent
+        if (!userId) {
+            throw new RequestError('Missing parameter')
+        }
+
+        await User.restore({ where: { id: userId } })
+
+        // Réponse de la sortie de poubelle
+        return res.status(204).json({})
+    } catch (err) {
+        next(err)
     }
-    
-    User.restore({ where: {id: userId}})
-        .then(() => res.status(204).json({}))
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
 
-exports.trashUser = (req, res) => {
-    let userId = parseInt(req.params.id)
+exports.trashUser = async (req, res, next) => {
+    try {
+        let userId = parseInt(req.params.id)
 
-    // Vérification si le champ id est présent et cohérent
-    if (!userId) {
-        return res.status(400).json({ message: 'Missing parameter' })
+        // Vérification si le champ id est présent et cohérent
+        if (!userId) {
+            throw new RequestError('Missing parameter')
+        }
+
+        // Suppression de l'utilisateur
+        await User.destroy({ where: { id: userId } })
+
+        // Réponse de la mise en poubelle
+        return res.status(204).json({})
+    } catch (err) {
+        next(err)
     }
-
-    // Suppression de l'utilisateur
-    User.destroy({ where: {id: userId}})
-        .then(() => res.status(204).json({}))
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
 
-exports.deleteUser =  (req, res) => {
-    let userId = parseInt(req.params.id)
+exports.deleteUser = async (req, res, next) => {
+    try {
+        let userId = parseInt(req.params.id)
 
-    // Vérification si le champ id est présent et cohérent
-    if (!userId) {
-        return res.status(400).json({ message: 'Missing parameter' })
+        // Vérification si le champ id est présent et cohérent
+        if (!userId) {
+            throw new RequestError('Missing parameter')
+        }
+
+        // Suppression de l'utilisateur
+        await User.destroy({ where: { id: userId }, force: true })
+        
+        // Réponse de la suppression
+        return res.status(204).json({})            
+    } catch (err) {
+        next(err)
     }
-
-    // Suppression de l'utilisateur
-    User.destroy({ where: {id: userId}, force: true})
-        .then(() => res.status(204).json({}))
-        .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
