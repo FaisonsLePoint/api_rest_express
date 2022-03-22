@@ -24,7 +24,7 @@ exports.getUser = async (req, res) => {
 
     try{
         // Récupération de l'utilisateur et vérification
-        let user = await User.findOne({ where: { id: userId }, raw: true })
+        let user = await User.findOne({ where: { id: userId }, attributes: ['id','pseudo','email']})
         if (user === null) {
             return res.status(404).json({ message: 'This user does not exist !' })
         }

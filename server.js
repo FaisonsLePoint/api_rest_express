@@ -33,7 +33,7 @@ const auth_router = require('./routes/auth')
 
 app.get('/', (req, res) => res.send(`I'm online. All is OK !`))
 
-app.use('/users', user_router)
+app.use('/users', checkTokenMiddleware, user_router)
 app.use('/cocktails', cocktail_router)
 
 app.use('/auth', auth_router)
