@@ -3,7 +3,8 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
-const User = require('../models/user')
+const DB = require('../db.config')
+const User = DB.User
 
 /**********************************/
 /*** Routage de la ressource Auth */
@@ -24,7 +25,8 @@ exports.login = async (req, res) => {
         }
 
         // Vérification du mot de passe
-        let test = await bcrypt.compare(password, user.password)
+        //let test = await bcrypt.compare(password, user.password)  
+        let test = await User.checkPassword(password, user.password)
         if(!test){
             return res.status(401).json({ message: 'Wrong password'})
         }
@@ -36,7 +38,7 @@ exports.login = async (req, res) => {
             prenom: user.prenom,
             email: user.email
         }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_DURING})
-
+        
         return res.json({access_token: token})
     }catch(err){
         if(err.name == 'SequelizeDatabaseError'){

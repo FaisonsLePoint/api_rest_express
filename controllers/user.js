@@ -2,7 +2,8 @@
 /*** Import des module nécessaires */
 const bcrypt = require('bcrypt')
 
-const User = require('../models/user')
+const DB = require('../db.config')
+const User = DB.User
 
 /**********************************/
 /*** Routage de la ressource User */
@@ -44,18 +45,18 @@ exports.addUser = async (req, res) => {
 
     try{
         // Vérification si l'utilisateur existe déjà
-        let user = await User.findOne({ where: { email: email }, raw: true })
+        const user = await User.findOne({ where: { email: email }, raw: true })
         if (user !== null) {
             return res.status(409).json({ message: `The user ${nom} already exists !` })
         }
 
         // Hashage du mot de passe utilisateur
-        let hash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_SALT_ROUND))
-        req.body.password = hash
+        // let hash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_SALT_ROUND))
+        // req.body.password = hash
 
         // Céation de l'utilisateur
-        let User = await User.create(req.body)
-        return res.json({ message: 'User Created', data: user })
+        let userc = await User.create(req.body)
+        return res.json({ message: 'User Created', data: userc })
 
     }catch(err){
         if(err.name == 'SequelizeDatabaseError'){

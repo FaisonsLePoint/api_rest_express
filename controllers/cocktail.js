@@ -1,12 +1,14 @@
 /***********************************/
 /*** Import des module nécessaires */
-const Cocktail = require('../models/cocktail')
+const DB = require('../db.config')
+const Cocktail = DB.Cocktail
+const User = DB.User
 
 /**************************************/
 /*** Routage de la ressource Cocktail */
 
 exports.getAllCocktails = (req, res) => {
-    Cocktail.findAll()
+    Cocktail.findAll({paranoid: false})
         .then(cocktails => res.json({ data: cocktails }))
         .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
@@ -21,7 +23,7 @@ exports.getCocktail = async (req, res) => {
 
     try {
         // Récupération du cocktail
-        let cocktail = await Cocktail.findOne({ where: { idd: cocktailId }, raw: true })
+        let cocktail = await Cocktail.findOne({ where: { id: cocktailId }, include: User })
 
         // Test si résultat
         if (cocktail === null) {

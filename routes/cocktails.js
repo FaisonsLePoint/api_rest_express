@@ -23,14 +23,14 @@ router.get('', cocktailCtrl.getAllCocktails)
 
 router.get('/:id', cocktailCtrl.getCocktail)
 
-router.put('', checkTokenMiddleware, cocktailCtrl.addCocktail)
+router.put('', cocktailCtrl.addCocktail)
 
-router.patch('/:id', checkTokenMiddleware, cocktailCtrl.updateCocktail)
+router.patch('/:id', cocktailCtrl.updateCocktail)
 
-router.post('/untrash/:id', checkTokenMiddleware, cocktailCtrl.untrashCocktail)
+router.post('/untrash/:id', cocktailCtrl.untrashCocktail)
     
-router.delete('/trash/:id', checkTokenMiddleware, cocktailCtrl.trashCocktail)
+router.delete('/trash/:id', cocktailCtrl.trashCocktail)
 
-router.delete('/:id', checkTokenMiddleware, cocktailCtrl.deleteCocktail)
+router.delete('/:id', cocktailCtrl.deleteCocktail)
 
 module.exports = router
